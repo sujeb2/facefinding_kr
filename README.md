@@ -6,4 +6,5 @@ facefinding
 
 ## using modules
 * opencv (python)
+** https://github.com/opencv/opencv
 * PyQt5
