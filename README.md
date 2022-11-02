@@ -8,3 +8,4 @@ facefinding
 * opencv (python)
 ** https://github.com/opencv/opencv
 * PyQt5
+* Pillow
