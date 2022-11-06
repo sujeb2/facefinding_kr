@@ -1,5 +1,5 @@
-# FaceFinding
-## aka. FaceTagging
+# FaceFinding 
+* aka. FaceTagging
 얼굴 사진에 태그를 추가합니다.
 
 * include some files
