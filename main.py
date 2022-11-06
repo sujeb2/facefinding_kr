@@ -5,6 +5,7 @@ import sys
 from PIL import Image
 from PIL import ImageColor
 import cv2
+import math
 
 # window
 
@@ -35,7 +36,8 @@ class MainWindow(QWidget):
         self.btn2.clicked.connect(self.createEditingWindow)
         self.btn3 = QPushButton("얼굴 찾기", self)
         self.btn3.clicked.connect(self.findFace)
-        self.btn4 = QPushButton("Button 4", self)
+        self.btn4 = QPushButton("얼굴 삭제", self)
+        self.btn4.clicked.connect(self.delface)
         self.btn5 = QPushButton("Button 5", self)
         self.btn6 = QPushButton("Button 6", self)
 
@@ -103,11 +105,10 @@ class MainWindow(QWidget):
             print(x, y, w, h)
             self.fList.append_face(x, y, w, h)
             # circle = ((image), (x, y), (size), (color), radius))
-            cv2.circle(img, (x, y), 45, (255, 0, 0), 2)
+            cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
         self.showImage(img)
         print("face found")
-
 
     def showImage(self, img):
         height, width, colors = img.shape
@@ -115,6 +116,41 @@ class MainWindow(QWidget):
         image = QImage(img.data, width, height, bytesPerLine, QImage.Format_RGB888)
         self.image = image.rgbSwapped()
         self.label.setPixmap(QPixmap.fromImage(self.image))
+
+    def delface(self):
+        if self.label.pixmap() == None:
+            print("image hasn't uploaded.")
+        elif self.fList is None or self.fList.count_face==0:
+            print("no face has been checked.")
+        else:
+            print("which face do you want to remove? right click to delete.")
+            self.delclicked = True
+
+    def mousePressEvent(self, event):
+        diag = 10000.0
+
+        if self.delclicked == True:
+            print('position:' + ' (%d %d)' % (event.x(), event.y()))
+            for i in self.fList.face_list:
+                centx = i.x + (i.w / 2)
+                centy = i.y + (i.h / 2)
+                if diag > abs(math.sqrt(((centx-event.x())**2)+((centy-event.y())**2))):
+                    diag = abs(math.sqrt(((centx-event.x())**2)+((centy-event.y())**2)))
+                    faceid = i.id
+
+            # remove
+            print("removing face id: ", faceid)
+            self.fList.remove_face(faceid)
+
+            # reset recangle
+            img = cv2.imread(self.imagepath, cv2.IMREAD_COLOR)
+            img = cv2.resize(img, (self.imgwidth, self.imgheight))
+
+            for f in self.fList.face_list:
+                print(f.x, f.y, f.w, f.h, f.name, f.id)
+                cv2.rectangle(img, (f.x, f.y), (f.x + f.w, f.y + f.h), (255, 0, 0), 2)
+                self.delclicked = False
+                self.showImage(img)
 
 # editing window
 class EditWindow(MainWindow):
@@ -244,13 +280,12 @@ class EditWindow(MainWindow):
 
         # another color
         if self.radiochecked == "another color?":
-            sans = ImageColor.getrgb("aquamarine")
+            sans = ImageColor.getrgb('aquamarine')
             img_edited = img.convert(sans)
             img_edited.save(os.getcwd() + "\output\wasans.jpg", "JPEG")
             mainwindow.imagepath = os.getcwd() + "\output\wasans.jpg"
             mainwindow.loadImage()
             print("color set to ?")
-
 
         # if same as default
         if imgwidth_edited == "Width":
@@ -286,6 +321,16 @@ class FaceList:
         self.face_list.append(Face(x, y, w, h, '', self.next_id))
         self.next_id += 1
 
+    def count_face(self):
+        return len(self.face_list)
+
+    def remove_face(self, ind):
+        cnt = 0
+        for i in self.face_list:
+            if i.id == ind:
+                del self.face_list[cnt]
+            cnt += 1
+
 # Main
 if __name__ == '__main__':
     app = QApplication(sys.argv)
@@ -296,13 +341,13 @@ if __name__ == '__main__':
     app.exec_()
 
 ##############################
-# |      NOTE SECTION        |
+#        NOTE SECTION        |
 ##############################
-#
-# testimg 1 ~ 5 size
-#############################
-# 1. 243 x 207
-# 2. 417 x 412
-# 3. 508 x 339
-# 4. 509 x 339
-# 5. 417 x 412
+# testimg 1 ~ 5 size         |
+##############################
+# 1. 243 x 207               |
+# 2. 417 x 412               |
+# 3. 508 x 339               |
+# 4. 509 x 339               |
+# 5. 417 x 412               |
+##############################
